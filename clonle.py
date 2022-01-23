@@ -87,7 +87,7 @@ if __name__ == "__main__":
     print(" done.")
 
     print("Choosing a word...", end="")
-    clonle.start()
+    clonle.start(target_frequency_cutoff=1e-5)
     print(" done.")
 
     color_mapping = {
