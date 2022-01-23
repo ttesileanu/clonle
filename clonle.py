@@ -4,9 +4,11 @@ import argparse
 import os
 
 import pandas as pd
+import numpy as np
 
 from backend import ClonleBackend, ClonleState, GameOverError
 from colorama import Style, Fore, Back
+from datetime import datetime
 
 
 def parse_command_line():
@@ -15,6 +17,12 @@ def parse_command_line():
         "n_letters", nargs="?", default=5, help="number of letters per word"
     )
     parser.add_argument("--max-attempts", default=6, help="maximum number of attempts")
+    parser.add_argument(
+        "--frequency",
+        default="daily",
+        choices=["daily", "hourly", "always"],
+        help="how often to get a new word: daily, hourly, or always (for every run)",
+    )
 
     args = parser.parse_args()
     return args
@@ -50,15 +58,32 @@ def display_history(history: list):
         display_word(*item)
 
 
+def create_clonle(frequency: str) -> ClonleBackend:
+    database_name = os.path.join("data", "unigram_freq.csv")
+    database = pd.read_csv(database_name)
+
+    if frequency == "always":
+        rng = np.random.default_rng()
+    else:
+        now = datetime.now()
+        seed = 1000 * now.year + 50 * now.month + now.day
+        if frequency == "hourly":
+            seed = 25 * seed + now.hour
+        rng = np.random.default_rng(seed)
+
+    clonle = ClonleBackend(
+        database, args.n_letters, max_attempts=args.max_attempts, rng=rng
+    )
+    return clonle
+
+
 if __name__ == "__main__":
     args = parse_command_line()
     print(f"Playing Clonle with {args.n_letters}-letter words.")
     print()
 
     print("Loading word database...", end="")
-    database_name = os.path.join("data", "unigram_freq.csv")
-    database = pd.read_csv(database_name)
-    clonle = ClonleBackend(database, args.n_letters, max_attempts=args.max_attempts)
+    clonle = create_clonle(args.frequency)
     print(" done.")
 
     print("Choosing a word...", end="")
