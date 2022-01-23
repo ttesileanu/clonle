@@ -211,3 +211,98 @@ def test_repr(dummy_clonle3):
     s = repr(dummy_clonle3)
     assert s.startswith("ClonleBackend(")
     assert s.endswith(")")
+
+
+def test_state_update_some_matches_none_perfect(clonle7):
+    clonle7.attempt("targets")  # "  . . ."
+    state = clonle7.get_state()
+
+    assert state["r"] == ClonleState.CONTAINED
+    assert state["e"] == ClonleState.CONTAINED
+    assert state["s"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "res":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_some_perfect_matches(clonle7):
+    clonle7.attempt("snipers")  # "xx  .. "
+    state = clonle7.get_state()
+
+    assert state["s"] == ClonleState.LOCATED
+    assert state["n"] == ClonleState.LOCATED
+    assert state["e"] == ClonleState.CONTAINED
+    assert state["r"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "sner":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_no_matches(clonle7):
+    clonle7.attempt("maximum")  # "       "
+    state = clonle7.get_state()
+
+    for _ in ascii_lowercase:
+        assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_duplicated_letter_single_match():
+    db = pd.DataFrame({"word": ["session", "targets"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 7)
+    clonle.start(target_frequency_cutoff=0.5)
+    clonle.attempt("targets")  # "    . ."
+    state = clonle.get_state()
+
+    assert state["e"] == ClonleState.CONTAINED
+    assert state["s"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "es":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_duplicated_letter_all_match():
+    db = pd.DataFrame({"word": ["session", "sassier"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 7)
+    clonle.start(target_frequency_cutoff=0.5)
+    clonle.attempt("sassier")  # "x xxx. "
+    state = clonle.get_state()
+
+    assert state["s"] == ClonleState.LOCATED
+    assert state["i"] == ClonleState.LOCATED
+    assert state["e"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "sie":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_duplicated_letter_some_match():
+    db = pd.DataFrame({"word": ["session", "duressy"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 7)
+    clonle.start(target_frequency_cutoff=0.5)
+    clonle.attempt("duressy")  # "   ... "
+    state = clonle.get_state()
+
+    assert state["s"] == ClonleState.CONTAINED
+    assert state["e"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "es":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_state_update_duplicated_letter_too_many_match():
+    db = pd.DataFrame({"word": ["session", "asaasss"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 7)
+    clonle.start(target_frequency_cutoff=0.5)
+    clonle.attempt("asaasss")  # " .  .. "
+    state = clonle.get_state()
+
+    assert state["s"] == ClonleState.CONTAINED
+
+    for _ in ascii_lowercase:
+        if _ not in "s":
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"

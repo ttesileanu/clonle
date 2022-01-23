@@ -109,12 +109,20 @@ class ClonleBackend:
 
         res = np.array(self.length * [" "])
         word = np.array(list(word))
+        target = np.array(list(self.target))
         for ch, count in self._target_counts.items():
             # choose the first occurrences of `ch` in `word`, if any, up to `count`
             idxs = (word == ch).nonzero()[0][:count]
-            res[idxs] = "."
 
-        res[word == np.array(list(self.target))] = "x"
+            if len(idxs) > 0:
+                if self.state[ch] == ClonleState.UNKNOWN:
+                    if np.any(target[idxs] == ch):
+                        self.state[ch] = ClonleState.LOCATED
+                    else:
+                        self.state[ch] = ClonleState.CONTAINED
+                res[idxs] = "."
+
+        res[word == target] = "x"
 
         self.attempts += 1
         return "".join(res)
