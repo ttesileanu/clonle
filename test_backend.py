@@ -335,3 +335,31 @@ def test_state_gets_updated_from_contained_to_located(clonle7):
 
     clonle7.attempt("snipers")
     assert clonle7.get_state()["s"] == ClonleState.LOCATED
+
+
+def test_attempt_return_correct_when_exact_match_after_non_match():
+    db = pd.DataFrame({"word": ["cakes", "asses"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 5)
+    clonle.start(target_frequency_cutoff=0.5)
+    res = clonle.attempt("asses")
+    assert res == ".  xx"
+
+
+def test_state_shows_contained_if_one_exact_match_some_missed():
+    db = pd.DataFrame({"word": ["sakes", "rakes"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 5)
+    clonle.start(target_frequency_cutoff=0.5)
+    clonle.attempt("rakes")
+
+    state = clonle.get_state()
+    assert state["s"] == ClonleState.CONTAINED
+
+
+def test_state_shows_contained_if_one_exact_match_some_misplaced():
+    db = pd.DataFrame({"word": ["sakes", "asses"], "count": [2, 1]})
+    clonle = ClonleBackend(db, 5)
+    clonle.start(target_frequency_cutoff=0.5)
+    res = clonle.attempt("asses")
+
+    state = clonle.get_state()
+    assert state["s"] == ClonleState.CONTAINED

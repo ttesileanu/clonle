@@ -50,7 +50,7 @@ class ClonleBackend:
         self,
         database: pd.DataFrame,
         length: int,
-        frequency_cutoff: float = 0.4e-5,
+        frequency_cutoff: float = 0.8e-6,
         max_attempts: int = 6,
         rng: Union[int, np.random.Generator] = 0,
     ):
@@ -116,18 +116,26 @@ class ClonleBackend:
         word = np.array(list(word))
         target = np.array(list(self.target))
         for ch, count in self._target_counts.items():
-            # choose the first occurrences of `ch` in `word`, if any, up to `count`
-            idxs = (word == ch).nonzero()[0][:count]
+            # first assign `ch` to exact matches
+            mask = (word == ch) & (target == ch)
+            res[mask] = "x"
+            n_exact = mask.sum()
+            count -= n_exact
 
-            if len(idxs) > 0:
-                if self.state[ch] != ClonleState.LOCATED:
-                    if np.any(target[idxs] == ch):
-                        self.state[ch] = ClonleState.LOCATED
-                    else:
-                        self.state[ch] = ClonleState.CONTAINED
-                res[idxs] = "."
+            if count == 0:
+                # we found all of them
+                self.state[ch] = ClonleState.LOCATED
+            else:
+                if n_exact > 0:
+                    # we found some, some missing/misplaced
+                    self.state[ch] = ClonleState.CONTAINED
 
-        res[word == target] = "x"
+                # find remaining occurrences of `ch` in `word` (if any)
+                idxs = ((word == ch) & (target != ch)).nonzero()[0][:count]
+
+                if len(idxs) > 0:
+                    self.state[ch] = ClonleState.CONTAINED
+                    res[idxs] = "."
 
         for ch in set(word):
             if ch not in self._target_counts:
