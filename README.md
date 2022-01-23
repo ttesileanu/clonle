@@ -1,5 +1,4 @@
-CLONLE -- a wordle clone
-========================
+# CLONLE -- a wordle clone
 
 A very simple implementation of a wordle-like game with a text-based interface.
 
@@ -16,3 +15,17 @@ Only a very basic attempt was made to clean up the dataset: a cutoff was placed 
 frequency of the words. This still leaves a lot of oddities, such as proper names, in
 the database. The target words is chosen using an even more strigent frequency cutoff,
 to help ensure that only well-known words are chosen as targets.
+
+## Installation
+
+Create a fresh virtual environment and run
+
+    pip install -r requirements.txt
+
+## Usage
+
+Run
+
+    python clonle.py
+
+...and enjoy!
