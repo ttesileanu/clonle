@@ -120,7 +120,7 @@ class ClonleBackend:
             idxs = (word == ch).nonzero()[0][:count]
 
             if len(idxs) > 0:
-                if self.state[ch] == ClonleState.UNKNOWN:
+                if self.state[ch] != ClonleState.LOCATED:
                     if np.any(target[idxs] == ch):
                         self.state[ch] = ClonleState.LOCATED
                     else:

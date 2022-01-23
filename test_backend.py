@@ -327,3 +327,11 @@ def test_state_update_duplicated_letter_too_many_match():
 def test_attempt_raises_value_error_for_word_not_in_dictionary(clonle7):
     with pytest.raises(ValueError):
         clonle7.attempt("bazooka")
+
+
+def test_state_gets_updated_from_contained_to_located(clonle7):
+    clonle7.attempt("targets")
+    assert clonle7.get_state()["s"] == ClonleState.CONTAINED
+
+    clonle7.attempt("snipers")
+    assert clonle7.get_state()["s"] == ClonleState.LOCATED
