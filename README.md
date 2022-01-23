@@ -1,5 +1,9 @@
 # CLONLE -- a wordle clone
 
+![version](https://img.shields.io/badge/version-v1.0.0-blue)
+[![Python 3.8](https://img.shields.io/badge/python-3.8-yellow.svg)](https://www.python.org/downloads/release/python-380/)
+[![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A very simple implementation of a wordle-like game with a text-based interface.
 
 Features:
