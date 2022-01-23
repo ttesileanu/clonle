@@ -1,3 +1,4 @@
+from dataclasses import MISSING
 import pytest
 
 import pandas as pd
@@ -222,7 +223,9 @@ def test_state_update_some_matches_none_perfect(clonle7):
     assert state["s"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "res":
+        if _ in "tag":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ not in "res":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
@@ -236,7 +239,9 @@ def test_state_update_some_perfect_matches(clonle7):
     assert state["r"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "sner":
+        if _ in "ip":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ not in "sner":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
@@ -245,7 +250,10 @@ def test_state_update_no_matches(clonle7):
     state = clonle7.get_state()
 
     for _ in ascii_lowercase:
-        assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+        if _ in "maxiu":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        else:
+            assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
 def test_state_update_duplicated_letter_single_match():
@@ -259,7 +267,9 @@ def test_state_update_duplicated_letter_single_match():
     assert state["s"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "es":
+        if _ in "targ":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ not in "es":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
@@ -275,7 +285,9 @@ def test_state_update_duplicated_letter_all_match():
     assert state["e"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "sie":
+        if _ in "ar":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ not in "sie":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
@@ -290,7 +302,9 @@ def test_state_update_duplicated_letter_some_match():
     assert state["e"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "es":
+        if _ in "dury":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ not in "es":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
 
 
@@ -304,5 +318,12 @@ def test_state_update_duplicated_letter_too_many_match():
     assert state["s"] == ClonleState.CONTAINED
 
     for _ in ascii_lowercase:
-        if _ not in "s":
+        if _ == "a":
+            assert state[_] == ClonleState.MISSING, f"{_} is not missing"
+        elif _ != "s":
             assert state[_] == ClonleState.UNKNOWN, f"{_} is not unknown"
+
+
+def test_attempt_raises_value_error_for_word_not_in_dictionary(clonle7):
+    with pytest.raises(ValueError):
+        clonle7.attempt("bazooka")

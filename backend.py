@@ -23,12 +23,13 @@ class ClonleState(Enum):
     UNKNOWN = 0  # no information yet
     CONTAINED = 1  # in word, location not found
     LOCATED = 2  # in word, location found
+    MISSING = -1  # not in word
 
 
 class ClonleBackend:
     """Class that manages the wordle-like backend.
 
-    :param database: word database; file name or Pandas dataframe
+    :param database: word database as a Pandas dataframe with columns "word" and "count"
     :param length: word length
     :param frequency_cutoff: cutoff for word frequencies: any word with a frequency
         below the cutoff will be ignored; note that frequencies are calculated before
@@ -47,7 +48,7 @@ class ClonleBackend:
 
     def __init__(
         self,
-        database: Union[str, pd.DataFrame],
+        database: pd.DataFrame,
         length: int,
         frequency_cutoff: float = 0.4e-5,
         max_attempts: int = 6,
@@ -101,11 +102,15 @@ class ClonleBackend:
             position; and 'x' indicates a letter at the correct position.
         """
         if len(word) != self.length:
-            raise ValueError(f"attempt has length {len(word)}, should be {self.length}")
+            raise ValueError(
+                f"attempt word has length {len(word)}, should be {self.length}."
+            )
         if not str.isalpha(word):
-            raise ValueError("attempt should be made up of letters only")
+            raise ValueError("attempt word contains non-letters.")
         if self.attempts >= self.max_attempts:
-            raise GameOverError("maximum attempts made")
+            raise GameOverError("maximum attempts made.")
+        if word not in self.database["word"].values:
+            raise ValueError("attempt word not in dictionary.")
 
         res = np.array(self.length * [" "])
         word = np.array(list(word))
@@ -123,6 +128,10 @@ class ClonleBackend:
                 res[idxs] = "."
 
         res[word == target] = "x"
+
+        for ch in set(word):
+            if ch not in self._target_counts:
+                self.state[ch] = ClonleState.MISSING
 
         self.attempts += 1
         return "".join(res)
