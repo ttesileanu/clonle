@@ -12,6 +12,10 @@ class NotInitializedError(Exception):
     pass
 
 
+class GameOverError(Exception):
+    pass
+
+
 class ClonleState(Enum):
     """Enum describing the state of a letter: unknown; contained, but unknown location;
     contained, and known location."""
@@ -55,33 +59,70 @@ class ClonleBackend:
 
         self.attempts = None
         self.state = None
+        self.target = None
         self.rng = np.random.default_rng(rng)
 
         self.database = self._clean_db(database)
 
+        self._target_counts = None
+
     def get_state(self) -> dict:
+        """Return the current information state.
+
+        :return: a dictionary in which each letter is mapped to one of the `ClonleState`
+            options
+        """
         if self.state is None:
             raise NotInitializedError("get_state() called before start()")
 
         return self.state
 
-    def start(self):
+    def start(self, target_frequency_cutoff: float = 0):
         """Start a new game.
 
         This chooses a target word and resets the state to indicate that no letters have
         been guessed and no attempts have been made.
+
+        :param target_frequency_cutoff: lowest frequency for target word
         """
         self.attempts = 0
         self._reset_state()
-        self.target = self._select_target()
+        self.target = self._select_target(cutoff=target_frequency_cutoff)
+        self._setup_target_counts()
+
+    def attempt(self, word: str) -> str:
+        """Attempt a word.
+
+        The function increases `self.attempts` and updates `self.state`.
+
+        :param word: word to test; should be length `self.length`.
+        :return: information about the word, as a string in which a space indicates no
+            match; '.' indicates a letter contained in the target but not at that
+            position; and 'x' indicates a letter at the correct position.
+        """
+        if len(word) != self.length:
+            raise ValueError(f"attempt has length {len(word)}, should be {self.length}")
+        if not str.isalpha(word):
+            raise ValueError("attempt should be made up of letters only")
+        if self.attempts >= self.max_attempts:
+            raise GameOverError("maximum attempts made")
+
+        res = np.array(self.length * [" "])
+        word = np.array(list(word))
+        for ch, count in self._target_counts.items():
+            # choose the first occurrences of `ch` in `word`, if any, up to `count`
+            idxs = (word == ch).nonzero()[0][:count]
+            res[idxs] = "."
+
+        res[word == np.array(list(self.target))] = "x"
+
+        self.attempts += 1
+        return "".join(res)
 
     def _reset_state(self):
         self.state = {}
         for ch in ascii_lowercase:
             self.state[ch] = ClonleState.UNKNOWN
-
-    def _select_word(self):
-        pass
 
     def _clean_db(self, database: pd.DataFrame) -> pd.DataFrame:
         """Return a cleaned database, with the proper number of letters and after
@@ -90,10 +131,51 @@ class ClonleBackend:
         clean_db["freq"] = clean_db["count"] / clean_db["count"].sum()
 
         mask1 = clean_db["word"].str.len() == self.length
-        mask2 = clean_db["freq"] > self.frequency_cutoff
+        mask2 = clean_db["freq"] >= self.frequency_cutoff
 
         return clean_db[mask1 & mask2]
 
-    def _select_target(self) -> str:
-        """Select a target word."""
-        return self.database["word"].sample().iloc[0]
+    def _select_target(self, cutoff: float) -> str:
+        """Select a target word.
+
+        :param cutoff: lowest-frequency word to consider
+        """
+        mask = self.database["freq"] >= cutoff
+        return self.database["word"][mask].sample(random_state=self.rng).iloc[0]
+
+    def _setup_target_counts(self):
+        """Creates a `dict` member that lists the letters in `self.target` and their
+        number of occurrences."""
+        assert self.target is not None, "this shouldn't happen"
+
+        counts = {}
+
+        for ch in self.target:
+            if ch in counts:
+                counts[ch] += 1
+            else:
+                counts[ch] = 1
+
+        self._target_counts = counts
+
+    def __str__(self):
+        return (
+            f"ClonleBackend("
+            f"length={self.length}, "
+            f"attempts={self.attempts} / {self.max_attempts}, "
+            f"target={self.target}"
+            f")"
+        )
+
+    def __repr__(self):
+        return (
+            f"ClonleBackend("
+            f"state={self.state}, "
+            f"database={self.database}, "
+            f"frequency_cutoff={self.frequency_cutoff}, "
+            f"length={self.length}, "
+            f"attempts={self.attempts}, "
+            f"max_attempts={self.max_attempts}, "
+            f"target={self.target}"
+            f")"
+        )
