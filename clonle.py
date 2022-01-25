@@ -14,9 +14,11 @@ from datetime import datetime
 def parse_command_line():
     parser = argparse.ArgumentParser(description="Clonle -- Wordle clone")
     parser.add_argument(
-        "n_letters", nargs="?", default=5, help="number of letters per word"
+        "n_letters", nargs="?", default=5, type=int, help="number of letters per word"
     )
-    parser.add_argument("--max-attempts", default=6, help="maximum number of attempts")
+    parser.add_argument(
+        "--max-attempts", default=6, type=int, help="maximum number of attempts"
+    )
     parser.add_argument(
         "--frequency",
         default="daily",
