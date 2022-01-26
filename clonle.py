@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import readline
 
 import pandas as pd
 import numpy as np
