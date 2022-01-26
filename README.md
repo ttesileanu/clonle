@@ -6,19 +6,27 @@
 
 A very simple implementation of a wordle-like game with a text-based interface.
 
-Features:
+In its default form, the goal of the game is to guess a 5-letter word. You are allowed 6
+attempts, each of which must itself be a valid 5-letter word. For each attempt, the game
+indicates which letters matched the target word in both identity and position; which
+letters from the guessed word appear in the target word but in a different place; and
+which letters are not contained in the target at all.
+
+This implementation allows different word lengths to be chosen.
+
+**Features:**
 
 * can change word length
 * can change the maximum number of attempts allowed
-* allows several options for the frequency with which a new word is chosen (daily,
+* has several options for the frequency with which a new word is chosen (daily,
 hourly, or for every run).
 
 The dictionary is from
 [Kaggle: English word frequency](https://www.kaggle.com/rtatman/english-word-frequency).
 Only a very basic attempt was made to clean up the dataset: a cutoff was placed on the
 frequency of the words. This still leaves a lot of oddities, such as proper names, in
-the database. The target words is chosen using an even more strigent frequency cutoff,
-to help ensure that only well-known words are chosen as targets.
+the database. The target words are chosen using an even more strigent frequency cutoff,
+to help ensure that targets are well-known words.
 
 ## Installation
 
@@ -33,3 +41,9 @@ Run
     python clonle.py
 
 ...and enjoy!
+
+Use
+
+    python clonle.py --help
+
+to get a description of the possible command-line options.
