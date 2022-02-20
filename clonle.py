@@ -62,7 +62,7 @@ def display_history(history: list):
 
 
 def create_clonle(frequency: str) -> ClonleBackend:
-    database_name = os.path.join("data", "unigram_freq.csv")
+    database_name = os.path.join("data", "dictionary.csv")
     database = pd.read_csv(database_name)
 
     if frequency == "always":
@@ -87,10 +87,10 @@ if __name__ == "__main__":
 
     print("Loading word database...", end="")
     clonle = create_clonle(args.frequency)
-    print(" done.")
+    print(f" done. {len(clonle.database)} words in dictionary.")
 
     print("Choosing a word...", end="")
-    clonle.start(target_frequency_cutoff=1e-5)
+    clonle.start(target_n_cutoff=3000)
     print(" done.")
 
     color_mapping = {
@@ -116,6 +116,7 @@ if __name__ == "__main__":
             history.append((s, res))
         except ValueError as err:
             print(f"Invalid word: {err}")
+            continue
 
         if res == clonle.length * "x":
             print()
