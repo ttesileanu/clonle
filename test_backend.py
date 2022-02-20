@@ -383,3 +383,15 @@ def test_db_automatically_sorted(special_db7):
     clonle = ClonleBackend(special_db7, 7, frequency_cutoff=0.0)
     clonle.start(target_n_cutoff=1)
     assert clonle.target == "snipers"
+
+
+def test_nan_frequency_words_are_not_removed(dummy_db3):
+    dummy_db3["freq"] = [np.nan, np.nan]
+    clonle = ClonleBackend(dummy_db3, 3, frequency_cutoff=None)
+    assert len(clonle.database) > 0
+
+
+def test_nan_frequency_can_be_target(dummy_db3):
+    dummy_db3["freq"] = [np.nan, np.nan]
+    clonle = ClonleBackend(dummy_db3, 3, frequency_cutoff=None)
+    clonle.start()

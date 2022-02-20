@@ -51,7 +51,7 @@ class ClonleBackend:
         self,
         database: pd.DataFrame,
         length: int,
-        frequency_cutoff: float = 0.8e-6,
+        frequency_cutoff: Optional[float] = None,
         max_attempts: int = 6,
         rng: Union[int, np.random.Generator] = 0,
     ):
@@ -80,7 +80,9 @@ class ClonleBackend:
         return self.state
 
     def start(
-        self, target_frequency_cutoff: float = 0, target_n_cutoff: Optional[int] = None
+        self,
+        target_frequency_cutoff: Optional[float] = None,
+        target_n_cutoff: Optional[int] = None,
     ):
         """Start a new game.
 
@@ -164,19 +166,25 @@ class ClonleBackend:
         if "freq" not in clean_db.columns:
             clean_db["freq"] = clean_db["count"] / clean_db["count"].sum()
 
-        mask1 = clean_db["word"].str.len() == self.length
-        mask2 = clean_db["freq"] >= self.frequency_cutoff
+        mask = clean_db["word"].str.len() == self.length
 
-        return clean_db[mask1 & mask2].sort_values("freq", ascending=False)
+        if self.frequency_cutoff:
+            mask = mask & (clean_db["freq"] >= self.frequency_cutoff)
 
-    def _select_target(self, cutoff: float, n_cutoff: Optional[int]) -> str:
+        return clean_db[mask].sort_values("freq", ascending=False)
+
+    def _select_target(self, cutoff: Optional[float], n_cutoff: Optional[int]) -> str:
         """Select a target word.
 
         :param cutoff: lowest-frequency word to consider
         :param n_cutoff: number of top-frequency words to consider
         """
-        mask = self.database["freq"] >= cutoff
-        words = self.database["word"][mask]
+        if cutoff:
+            mask = self.database["freq"] >= cutoff
+            words = self.database["word"][mask]
+        else:
+            words = self.database["word"]
+
         if n_cutoff:
             words = words[:n_cutoff]
         return words.sample(random_state=self.rng).iloc[0]
