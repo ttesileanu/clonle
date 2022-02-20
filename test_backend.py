@@ -363,3 +363,23 @@ def test_state_shows_contained_if_one_exact_match_some_misplaced():
 
     state = clonle.get_state()
     assert state["s"] == ClonleState.CONTAINED
+
+
+def test_frequency_information_taken_from_freq_if_available(special_db7):
+    special_db7["freq"] = [0.1, 0.1, 0.1, 1.0]
+    clonle = ClonleBackend(special_db7, 7, frequency_cutoff=0.5)
+    clonle.start()
+    assert clonle.target == "maximum"
+
+
+def test_target_n_cutoff_obeyed(special_db7):
+    clonle = ClonleBackend(special_db7, 7, frequency_cutoff=0.0)
+    clonle.start(target_n_cutoff=1)
+    assert clonle.target == "snorkle"
+
+
+def test_db_automatically_sorted(special_db7):
+    special_db7["freq"] = [0.1, 0.1, 1.0, 0.1]
+    clonle = ClonleBackend(special_db7, 7, frequency_cutoff=0.0)
+    clonle.start(target_n_cutoff=1)
+    assert clonle.target == "snipers"

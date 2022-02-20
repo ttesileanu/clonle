@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from string import ascii_lowercase
-from typing import Union
+from typing import Union, Optional
 from enum import Enum
 
 
@@ -32,8 +32,9 @@ class ClonleBackend:
     :param database: word database as a Pandas dataframe with columns "word" and "count"
     :param length: word length
     :param frequency_cutoff: cutoff for word frequencies: any word with a frequency
-        below the cutoff will be ignored; note that frequencies are calculated before
-        restricting the number of letters
+        below the cutoff will be ignored; frequencies are either used directly if a
+        column "freq" exists, or calculated from "count" *before* restricting by word
+        length
     :param max_attempts: maximum number of attempts
     :param rng: random number generator to use; should be either a seed or a
         `numpy.random.Generator` object
@@ -78,17 +79,23 @@ class ClonleBackend:
 
         return self.state
 
-    def start(self, target_frequency_cutoff: float = 0):
+    def start(
+        self, target_frequency_cutoff: float = 0, target_n_cutoff: Optional[int] = None
+    ):
         """Start a new game.
 
         This chooses a target word and resets the state to indicate that no letters have
         been guessed and no attempts have been made.
 
         :param target_frequency_cutoff: lowest frequency for target word
+        :param target_n_cutoff: the number of top-frequency words from which to choose
+            target
         """
         self.attempts = 0
         self._reset_state()
-        self.target = self._select_target(cutoff=target_frequency_cutoff)
+        self.target = self._select_target(
+            cutoff=target_frequency_cutoff, n_cutoff=target_n_cutoff
+        )
         self._setup_target_counts()
 
     def attempt(self, word: str) -> str:
@@ -153,20 +160,26 @@ class ClonleBackend:
         """Return a cleaned database, with the proper number of letters and after
         removing extremely rare words."""
         clean_db = database.copy()
-        clean_db["freq"] = clean_db["count"] / clean_db["count"].sum()
+
+        if "freq" not in clean_db.columns:
+            clean_db["freq"] = clean_db["count"] / clean_db["count"].sum()
 
         mask1 = clean_db["word"].str.len() == self.length
         mask2 = clean_db["freq"] >= self.frequency_cutoff
 
-        return clean_db[mask1 & mask2]
+        return clean_db[mask1 & mask2].sort_values("freq", ascending=False)
 
-    def _select_target(self, cutoff: float) -> str:
+    def _select_target(self, cutoff: float, n_cutoff: Optional[int]) -> str:
         """Select a target word.
 
         :param cutoff: lowest-frequency word to consider
+        :param n_cutoff: number of top-frequency words to consider
         """
         mask = self.database["freq"] >= cutoff
-        return self.database["word"][mask].sample(random_state=self.rng).iloc[0]
+        words = self.database["word"][mask]
+        if n_cutoff:
+            words = words[:n_cutoff]
+        return words.sample(random_state=self.rng).iloc[0]
 
     def _setup_target_counts(self):
         """Creates a `dict` member that lists the letters in `self.target` and their
