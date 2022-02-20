@@ -135,7 +135,7 @@ class ClonleBackend:
                 # we found all of them
                 self.state[ch] = ClonleState.LOCATED
             else:
-                if n_exact > 0:
+                if n_exact > 0 and self.state[ch] != ClonleState.LOCATED:
                     # we found some, some missing/misplaced
                     self.state[ch] = ClonleState.CONTAINED
 
@@ -143,7 +143,8 @@ class ClonleBackend:
                 idxs = ((word == ch) & (target != ch)).nonzero()[0][:count]
 
                 if len(idxs) > 0:
-                    self.state[ch] = ClonleState.CONTAINED
+                    if self.state[ch] != ClonleState.LOCATED:
+                        self.state[ch] = ClonleState.CONTAINED
                     res[idxs] = "."
 
         for ch in set(word):

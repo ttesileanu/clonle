@@ -395,3 +395,18 @@ def test_nan_frequency_can_be_target(dummy_db3):
     dummy_db3["freq"] = [np.nan, np.nan]
     clonle = ClonleBackend(dummy_db3, 3, frequency_cutoff=None)
     clonle.start()
+
+
+def test_located_letters_stay_located():
+    db = pd.DataFrame(
+        {"word": ["snorkle", "panders", "snipers", "maximum"], "count": [4, 1, 1, 1]}
+    )
+
+    clonle = ClonleBackend(db, 7)
+    clonle.start(target_frequency_cutoff=0.5)
+
+    clonle.attempt("snipers")  # this should locate "n"
+    assert clonle.state["n"] == ClonleState.LOCATED
+
+    clonle.attempt("panders")  # this shouldn't un-locate "n"
+    assert clonle.state["n"] == ClonleState.LOCATED
