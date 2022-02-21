@@ -21,12 +21,7 @@ This implementation allows different word lengths to be chosen.
 * has several options for the frequency with which a new word is chosen (daily,
 hourly, or for every run).
 
-The dictionary is from
-[Kaggle: English word frequency](https://www.kaggle.com/rtatman/english-word-frequency).
-Only a very basic attempt was made to clean up the dataset: a cutoff was placed on the
-frequency of the words. This still leaves a lot of oddities, such as proper names, in
-the database. The target words are chosen using an even more strigent frequency cutoff,
-to help ensure that targets are well-known words.
+The dictionary is the [Collins Scrabble Words](https://en.wikipedia.org/wiki/Collins_Scrabble_Words) (CSW) 2019. The target words are chosen from the 3000 most common words, using the frequency estimates from the [Google Web Trillion Word Corpus](https://www.kaggle.com/rtatman/english-word-frequency).
 
 ## Installation
 
