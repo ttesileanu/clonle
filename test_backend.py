@@ -1,4 +1,3 @@
-from dataclasses import MISSING
 import pytest
 
 import pandas as pd
